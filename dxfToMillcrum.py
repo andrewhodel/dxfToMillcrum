@@ -164,11 +164,6 @@ def newPointFromDistanceAndAngle(x,y,ang,distance):
 def drawPolyline(polyline):
     # returns a list of points for a polyline with line segments replacing arcs
 
-    global minX
-    global maxX
-    global minY
-    global maxY
-
     if (len(polyline.points) > 1):
         collector = []
         for p in range(len(polyline.points)-1):
@@ -176,21 +171,6 @@ def drawPolyline(polyline):
             p2 = polyline.points[p+1]
             v1 = (p1[0],p1[1],p1[2])
             v2 = (p2[0],p2[1],p2[2])
-
-            if p == 0:
-                minX = p1[0]
-                maxX = p1[0]
-                minY = p1[1]
-                maxY = p1[1]
-            else:
-                if p1[0] < minX:
-                    minX = p1[0]
-                elif p1[0] > maxX:
-                    maxX = p1[0]
-                if p1[1] < minY:
-                    minY = p1[1]
-                elif p1[1] > maxY:
-                    maxY = p1[1]
 
             if not equals(v1,v2):
                 
@@ -348,11 +328,10 @@ def warn(type,dxfobject):
 # process file
 def process(filename):
     # process a file
-    global drawing 
-    global minX
-    global maxX
-    global minY
-    global maxY
+    minX = 0
+    maxX = 0
+    minY = 0
+    maxY = 0
     drawing = readDXF(filename)
     mcOut = ''
 
@@ -377,13 +356,35 @@ def process(filename):
 
             mcOut += "\n// "+polyline.layer+"\n"
             mcOut += "var polygon"+str(i)+" = {type:'polygon',points:["
-            for oooo in shape:
-		mcOut += '['+str(oooo[0])+','+str(oooo[1])+'],';
+            for p in shape:
+		mcOut += '['+str(p[0])+','+str(p[1])+'],';
+
+                # calculate min and max
+                if p == 0 and i == 0:
+                    minX = p1[0]
+                    maxX = p1[0]
+                    minY = p1[1]
+                    maxY = p1[1]
+                else:
+                    if p[0] < minX:
+                        minX = p[0]
+                    elif p[0] > maxX:
+                        maxX = p[0]
+                    if p[1] < minY:
+                        minY = p[1]
+                    elif p[1] > maxY:
+                        maxY = p[1]
+
             mcOut += "]};"
             mcOut += "\nmc.cut('centerOnPath',polygon"+str(i)+", 4, [0,0]);\n"
             i += 1
 
     mcOut += '\nmc.get();\n'
+
+    if minX > 0:
+        minX = 0;
+    if minY > 0:
+        minY = 0;
 
     totalX = maxX-minX
     totalY = maxY-minY
