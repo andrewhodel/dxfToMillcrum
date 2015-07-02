@@ -354,26 +354,37 @@ def process(filename):
         shape = drawPolyline(polyline)
         if shape:
 
+            # to remove duplicate points
+            lastPoint = [0,0]
+
             mcOut += "\n// "+polyline.layer+"\n"
             mcOut += "var polygon"+str(i)+" = {type:'polygon',points:["
+            pl = 0
             for p in shape:
-		mcOut += '['+str(p[0])+','+str(p[1])+'],';
 
-                # calculate min and max
-                if p == 0 and i == 0:
-                    minX = p1[0]
-                    maxX = p1[0]
-                    minY = p1[1]
-                    maxY = p1[1]
-                else:
-                    if p[0] < minX:
-                        minX = p[0]
-                    elif p[0] > maxX:
-                        maxX = p[0]
-                    if p[1] < minY:
-                        minY = p[1]
-                    elif p[1] > maxY:
-                        maxY = p[1]
+                if (lastPoint[0] != p[0] or lastPoint[1] != p[1]) or pl == 0:
+                    # this is a novel point or the first point
+		    mcOut += '['+str(p[0])+','+str(p[1])+'],';
+
+                    # calculate min and max
+                    if p == 0 and i == 0:
+                        minX = p1[0]
+                        maxX = p1[0]
+                        minY = p1[1]
+                        maxY = p1[1]
+                    else:
+                        if p[0] < minX:
+                            minX = p[0]
+                        elif p[0] > maxX:
+                            maxX = p[0]
+                        if p[1] < minY:
+                            minY = p[1]
+                        elif p[1] > maxY:
+                            maxY = p[1]
+
+                    lastPoint[0] = p[0]
+                    lastPoint[1] = p[1]
+                pl += 1
 
             mcOut += "]};"
             mcOut += "\nmc.cut('centerOnPath',polygon"+str(i)+", 4, [0,0]);\n"
