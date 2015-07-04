@@ -358,7 +358,7 @@ def process(filename):
             lastPoint = [0,0]
 
             mcOut += "\n// "+polyline.layer+"\n"
-            mcOut += "var polygon"+str(i)+" = {type:'polygon',points:["
+            mcOut += "var polygon"+str(i)+" = {type:'polygon',name:'"+polyline.layer+"',points:["
             pl = 0
             for p in shape:
 
