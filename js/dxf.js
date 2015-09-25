@@ -178,7 +178,7 @@ Dxf.prototype.parseDxf = function(d) {
 	for (var c=0; c<this.polygons.length; c++) {
 		var polygon = this.polygons[c];
 
-		console.log('LAYER',polygon.layer);
+		console.log('\n\n\n\nLAYER',polygon.layer);
 		console.log('POINTS BEFORE PROCESSING',polygon.points.length);
 
 		// loop through each point in polygon for the min and max values
@@ -207,6 +207,9 @@ Dxf.prototype.parseDxf = function(d) {
 		for (var i=0; i<polygon.points.length-1; i++) {
 			var p1 = polygon.points[i];
 			var p2 = polygon.points[i+1];
+
+			// temp for displaying points later
+			var thisLoopPoints = [];
 
 			if (p1[0] != p2[0] && p1[1] != p2[1]) {
 				// the points are not the same, check for a bulge
@@ -319,13 +322,6 @@ Dxf.prototype.parseDxf = function(d) {
 						var numSegments = 40;
 						var degreeStep = arcTotalDeg / numSegments;
 
-						console.log('\nPOINT #'+i);
-						console.log('p1',p1);
-						console.log('p2',p2);
-						console.log('cv',cv);
-						console.log('startAng',startAng);
-						console.log('endAng',endAng);
-
 						// now loop through each degreeStep
 						for (var a=1; a<numSegments+1; a++) {
 							// for a positive bulge the start point is always a lower number of degrees
@@ -338,7 +334,11 @@ Dxf.prototype.parseDxf = function(d) {
 							}
 							// add the point
 							newPoints.push(pt);
+							thisLoopPoints.push(pt);
 						}
+
+						p1 = thisLoopPoints[0];
+						p2 = thisLoopPoints[thisLoopPoints.length-1];
 
 					}
 
@@ -348,7 +348,33 @@ Dxf.prototype.parseDxf = function(d) {
 					newPoints.push(p1,p2);
 				}
 
+			} else {
+
+				// the points are the same, but it could be a non bulge which would be different
+				newPoints.push(p1,p2);
+
 			}
+
+/*
+			console.log('\nPOINT LOOP #'+i);
+			console.log('p1',p1);
+			console.log('p2',p2);
+			console.log('cv',cv);
+			console.log('startAng',startAng);
+			console.log('endAng',endAng);
+			console.log('thisLoopPoints ' + thisLoopPoints.length);
+			for (var nn=0; nn<thisLoopPoints.length; nn++) {
+				console.log(nn,thisLoopPoints[nn]);
+			}
+*/
+			console.log('POINT LOOP #'+i+' '+thisLoopPoints.length,p1,p2);
+/*
+			for (var nn=0; nn<thisLoopPoints.length; nn++) {
+				if (thisLoopPoints[nn][0] == 1.354043684522797) {
+					console.log(thisLoopPoints);
+				}
+			}
+*/
 
 		}
 
@@ -371,7 +397,7 @@ var fs = require('fs');
 
 var dxf = new Dxf();
 
-fs.readFile('./oshw_no_text.dxf', function(e, d) {
+fs.readFile('../oshw.dxf', function(e, d) {
 	dxf.parseDxf(d);
 	var s = '';
 	for (var c=0; c<dxf.polygons.length; c++) {
@@ -381,5 +407,6 @@ fs.readFile('./oshw_no_text.dxf', function(e, d) {
 		}
 		s += ']};\nmc.cut(\'centerOnPath\', polygon'+c+', 4, [0,0]);\n';
 	}
-	//console.log(s);
+	console.log('\n\n');
+	console.log(s);
 });
