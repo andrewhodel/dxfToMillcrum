@@ -125,7 +125,7 @@ Dxf.prototype.parseDxf = function(d) {
 
 			acDbPolyline_bool = true;
 			// add a polygon
-			this.polygons.push({layer: cur_acDbEntity, points: []});
+			this.polygons.push({layer: cur_acDbEntity.trim(), points: []});
 		} else if (acDbPolyline_bool === true && unusedGroupCodes.indexOf(Number(l[c])) > -1) {
 			// this is an unused group code, we can disregard this and the next line
 			skipUnused = true;
@@ -178,8 +178,8 @@ Dxf.prototype.parseDxf = function(d) {
 	for (var c=0; c<this.polygons.length; c++) {
 		var polygon = this.polygons[c];
 
-		console.log('\n\n\n\nLAYER',polygon.layer);
-		console.log('POINTS BEFORE PROCESSING',polygon.points.length);
+		//console.log('\n\n\n\nLAYER',polygon.layer);
+		//console.log('POINTS BEFORE PROCESSING',polygon.points.length);
 
 		// loop through each point in polygon for the min and max values
 		for (var i=0; i<polygon.points.length-1; i++) {
@@ -211,8 +211,18 @@ Dxf.prototype.parseDxf = function(d) {
 			// temp for displaying points later
 			var thisLoopPoints = [];
 
-			if (p1[0] != p2[0] && p1[1] != p2[1]) {
-				// the points are not the same, check for a bulge
+			/*
+			console.log('\nPOINT LOOP #'+i+' for '+polygon.layer);
+			console.log('p1',p1);
+			console.log('p2',p2);
+			console.log('cv',cv);
+			*/
+
+			if (p1[0] == p2[0] && p1[1] == p2[1]) {
+				// the points are the exact same
+
+			} else {
+				// the points are different
 
 				if (typeof(p1[2]) != 'undefined') {
 					// there is a bulge, get the center point
@@ -348,40 +358,30 @@ Dxf.prototype.parseDxf = function(d) {
 					newPoints.push(p1,p2);
 				}
 
-			} else {
-
-				// the points are the same, but it could be a non bulge which would be different
-				newPoints.push(p1,p2);
-
 			}
 
 /*
-			console.log('\nPOINT LOOP #'+i);
-			console.log('p1',p1);
-			console.log('p2',p2);
-			console.log('cv',cv);
 			console.log('startAng',startAng);
 			console.log('endAng',endAng);
+			console.log('startPointQuad',startPointQuad);
+			console.log('endPointQuad',endPointQuad);
 			console.log('thisLoopPoints ' + thisLoopPoints.length);
+*/
+
+/*
 			for (var nn=0; nn<thisLoopPoints.length; nn++) {
 				console.log(nn,thisLoopPoints[nn]);
 			}
 */
-			console.log('POINT LOOP #'+i+' '+thisLoopPoints.length,p1,p2);
-/*
-			for (var nn=0; nn<thisLoopPoints.length; nn++) {
-				if (thisLoopPoints[nn][0] == 1.354043684522797) {
-					console.log(thisLoopPoints);
-				}
-			}
-*/
+
+			//console.log('POINT LOOP #'+i+' '+thisLoopPoints.length,p1,p2);
 
 		}
 
 		// set newPoints as this polygons points
 		this.polygons[c].points = newPoints;
 
-		console.log('POINTS AFTER PROCESSING',newPoints.length);
+		//console.log('POINTS AFTER PROCESSING',newPoints.length);
 
 	}
 
@@ -391,22 +391,29 @@ Dxf.prototype.parseDxf = function(d) {
 
 };
 
-// this is a WIP port of the python code to JS
-
 var fs = require('fs');
 
 var dxf = new Dxf();
 
 fs.readFile('../oshw.dxf', function(e, d) {
 	dxf.parseDxf(d);
-	var s = '';
+	var s = 'var tool = {units:"mm",diameter:6.35,passDepth:4,step:1,rapid:2000,plunge:100,cut:600,zClearance:5,returnHome:true};\n';
+
+	s += '// setup a new Millcrum object with that tool\nvar mc = new Millcrum(tool);\n';
+	s += '// set the surface dimensions for the viewer\nmc.surface('+(dxf.width*1.5)+','+(dxf.height*1.5)+');\n';
+
 	for (var c=0; c<dxf.polygons.length; c++) {
-		s += '\nvar polygon'+c+' = {type:\'polygon\',points:[';
+		var wtf = dxf.polygons[c].layer;
+		s += '\n//LAYER '+wtf+'\n';
+		s += 'var polygon'+c+' = {type:\'polygon\',name:\''+wtf+'\',points:[';
 		for (var p=0; p<dxf.polygons[c].points.length; p++) {
 			s += '['+dxf.polygons[c].points[p][0]+','+dxf.polygons[c].points[p][1]+'],';
 		}
+
 		s += ']};\nmc.cut(\'centerOnPath\', polygon'+c+', 4, [0,0]);\n';
 	}
-	console.log('\n\n');
+
+	s += '\nmc.get();\n';
 	console.log(s);
+
 });
